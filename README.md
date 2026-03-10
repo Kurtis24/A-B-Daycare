@@ -1,4 +1,4 @@
-# A&B Daycare Photo Sharing Application
+# A&B Daycare Photo Sharing Application 
 
 A mobile-first web application for daycare centers to facilitate secure photo sharing between teachers and parents.
 

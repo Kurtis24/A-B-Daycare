@@ -5,6 +5,7 @@ import { USER_ROLES } from './constants/roles';
 
 // Auth Pages
 import Login from './pages/Login';
+import NewLogin from './pages/NewLogin';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Unauthorized from './pages/Unauthorized';
@@ -21,6 +22,9 @@ import ParentGallery from './pages/parent/ParentGallery';
 import TeacherGallery from './pages/teacher/TeacherGallery';
 import PhotoUpload from './pages/teacher/PhotoUpload';
 
+// Shared Pages
+import TabbedGallery from './pages/TabbedGallery';
+
 function App() {
   return (
     <AuthProvider>
@@ -28,6 +32,7 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/new-login" element={<NewLogin />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
@@ -103,6 +108,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={[USER_ROLES.PARENT]}>
                 <ParentGallery />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Shared Gallery Route */}
+          <Route
+            path="/gallery"
+            element={
+              <ProtectedRoute>
+                <TabbedGallery />
               </ProtectedRoute>
             }
           />

@@ -20,6 +20,7 @@ import ParentGallery from './pages/parent/ParentGallery';
 // Teacher Pages
 import TeacherGallery from './pages/teacher/TeacherGallery';
 import PhotoUpload from './pages/teacher/PhotoUpload';
+import TeacherChildren from './pages/teacher/TeacherChildren';
 
 function App() {
   return (
@@ -76,6 +77,16 @@ function App() {
           />
 
           {/* Teacher Routes */}
+          <Route
+            path="/teacher/children"
+            element={
+              <ProtectedRoute
+                allowedRoles={[USER_ROLES.TEACHER, USER_ROLES.SUPER_TEACHER, USER_ROLES.ADMIN]}
+              >
+                <TeacherChildren />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/teacher/gallery"
             element={

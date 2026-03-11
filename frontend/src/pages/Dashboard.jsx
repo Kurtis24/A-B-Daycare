@@ -16,7 +16,7 @@ const Dashboard = () => {
           break;
         case USER_ROLES.SUPER_TEACHER:
         case USER_ROLES.TEACHER:
-          navigate('/teacher/gallery', { replace: true });
+          navigate('/teacher/children', { replace: true });
           break;
         case USER_ROLES.PARENT:
           navigate('/parent/gallery', { replace: true });

@@ -143,12 +143,37 @@ const TeacherGallery = () => {
     }
 
     try {
-      const { error } = await supabase
+      // Get the photo details first to delete from storage
+      const { data: photoData, error: fetchError } = await supabase
+        .from('photos')
+        .select('file_path, thumbnail_path')
+        .eq('id', photoId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete from database (this will cascade to photo_children)
+      const { error: dbError } = await supabase
         .from('photos')
         .delete()
         .eq('id', photoId);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
+
+      // Delete from storage bucket
+      const filesToDelete = [photoData.file_path];
+      if (photoData.thumbnail_path) {
+        filesToDelete.push(photoData.thumbnail_path);
+      }
+
+      const { error: storageError } = await supabase
+        .storage
+        .from('photos')
+        .remove(filesToDelete);
+
+      if (storageError) {
+        console.error('Error deleting from storage:', storageError);
+      }
 
       alert('Photo deleted successfully');
       setSelectedPhoto(null);
@@ -297,7 +322,7 @@ const TeacherGallery = () => {
                   )}
                 </div>
                 <div className="flex space-x-2">
-                  {selectedPhoto.uploaded_by === user.id && (
+                  {(selectedPhoto.uploaded_by === user.id || userRole.role === USER_ROLES.ADMIN) && (
                     <button
                       onClick={() => handleDeletePhoto(selectedPhoto.id)}
                       className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700"

@@ -28,10 +28,22 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-yellow-100 px-4">
       <div className="max-w-md w-full">
-        <div className="card">
-          <div className="text-center mb-8">
+        <div className="bg-white rounded-3xl shadow-xl p-8 relative">
+          {/* Back to Home Button */}
+          <a
+            href="https://abdaycare.vercel.app/"
+            className="absolute top-6 left-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            title="Back to Home"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="ml-1 text-sm font-medium">Home</span>
+          </a>
+
+          <div className="text-center mb-8 mt-4">
             <h1 className="text-2xl font-bold text-gray-900">Reset Password</h1>
             <p className="text-gray-600 mt-2">Enter your email to receive a reset link</p>
           </div>

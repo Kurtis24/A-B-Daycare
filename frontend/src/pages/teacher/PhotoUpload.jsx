@@ -111,7 +111,7 @@ const PhotoUpload = () => {
         // Generate unique file name
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `photos/${fileName}`;
+        const filePath = `${user.id}/${fileName}`; // Store in user's folder
 
         // Upload to Supabase Storage
         const { error: uploadError } = await supabase.storage

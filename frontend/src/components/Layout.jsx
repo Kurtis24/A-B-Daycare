@@ -7,7 +7,7 @@ const Layout = ({ children }) => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/new-login');
   };
 
   return (

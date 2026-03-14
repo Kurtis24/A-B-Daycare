@@ -24,3 +24,6 @@ yarn-debug.log*
 
 # OS
 Thumbs.db
+
+/frontend/package-lock.json 
+/backend/package-lock.json 

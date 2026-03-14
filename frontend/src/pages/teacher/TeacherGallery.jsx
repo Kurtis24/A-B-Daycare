@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,9 +10,12 @@ const TeacherGallery = () => {
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [selectedChildName, setSelectedChildName] = useState(null);
+  const [searchParams] = useSearchParams();
+  const childIdFromUrl = searchParams.get('childId');
   const [filters, setFilters] = useState({
     ageGroup: 'all',
-    childId: 'all',
+    childId: childIdFromUrl || 'all',
   });
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
@@ -22,6 +25,12 @@ const TeacherGallery = () => {
       fetchData();
     }
   }, [user, userRole, filters]);
+
+  useEffect(() => {
+    if (childIdFromUrl && childIdFromUrl !== filters.childId) {
+      setFilters(prev => ({ ...prev, childId: childIdFromUrl }));
+    }
+  }, [childIdFromUrl]);
 
   const fetchData = async () => {
     try {
@@ -57,6 +66,13 @@ const TeacherGallery = () => {
       const { data: childrenData, error: childrenError } = await childrenQuery.order('name');
       if (childrenError) throw childrenError;
       setChildren(childrenData || []);
+
+      if (childIdFromUrl) {
+        const selectedChild = childrenData.find(c => c.id === childIdFromUrl);
+        setSelectedChildName(selectedChild?.name || null);
+      } else {
+        setSelectedChildName(null);
+      }
 
       // Build query for photos
       const childIds = childrenData.map(c => c.id);
@@ -127,12 +143,37 @@ const TeacherGallery = () => {
     }
 
     try {
-      const { error } = await supabase
+      // Get the photo details first to delete from storage
+      const { data: photoData, error: fetchError } = await supabase
+        .from('photos')
+        .select('file_path, thumbnail_path')
+        .eq('id', photoId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete from database (this will cascade to photo_children)
+      const { error: dbError } = await supabase
         .from('photos')
         .delete()
         .eq('id', photoId);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
+
+      // Delete from storage bucket
+      const filesToDelete = [photoData.file_path];
+      if (photoData.thumbnail_path) {
+        filesToDelete.push(photoData.thumbnail_path);
+      }
+
+      const { error: storageError } = await supabase
+        .storage
+        .from('photos')
+        .remove(filesToDelete);
+
+      if (storageError) {
+        console.error('Error deleting from storage:', storageError);
+      }
 
       alert('Photo deleted successfully');
       setSelectedPhoto(null);
@@ -157,17 +198,46 @@ const TeacherGallery = () => {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Photo Gallery</h1>
-            <p className="text-gray-600">{photos.length} photos</p>
+        <div className="space-y-4">
+          {selectedChildName && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <button
+                onClick={() => navigate('/teacher/children')}
+                className="flex items-center gap-1 hover:text-primary-600 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Children
+              </button>
+              <span>/</span>
+              <span className="font-medium text-gray-900">{selectedChildName}'s Photos</span>
+            </div>
+          )}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {selectedChildName ? `${selectedChildName}'s Photos` : 'Photo Gallery'}
+              </h1>
+              <p className="text-gray-600">{photos.length} photos</p>
+            </div>
+            <div className="flex gap-3">
+              {!selectedChildName && (
+                <button
+                  onClick={() => navigate('/teacher/children')}
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  View Children
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/teacher/upload')}
+                className="btn-primary"
+              >
+                + Upload Photos
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => navigate('/teacher/upload')}
-            className="btn-primary"
-          >
-            + Upload Photos
-          </button>
         </div>
 
         {/* Filters */}
@@ -252,7 +322,7 @@ const TeacherGallery = () => {
                   )}
                 </div>
                 <div className="flex space-x-2">
-                  {selectedPhoto.uploaded_by === user.id && (
+                  {(selectedPhoto.uploaded_by === user.id || userRole.role === USER_ROLES.ADMIN) && (
                     <button
                       onClick={() => handleDeletePhoto(selectedPhoto.id)}
                       className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
